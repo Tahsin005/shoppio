@@ -8,6 +8,8 @@ import { ok } from "./utils/envelope.js";
 import environment from "./config/environment.js";
 import { notFound } from "./middleware/notFound.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { clerkMiddleware } from '@clerk/express';
+import { authRouter } from "./routes/auth/auth.routes.js";
 
 async function mainEntryFunction() {
     await connectDB();
@@ -28,12 +30,16 @@ async function mainEntryFunction() {
 
     app.use(express.json());
     app.use(morgan("dev"));
+    app.use(clerkMiddleware());
 
     app.get("/health", (_req, res) => {
         res.status(200).json(ok({ 
             message: "Server is healthy and running" 
         }));
     });
+
+    // auth routes
+    app.use("/auth", authRouter);
 
     app.use(notFound);
     app.use(errorHandler);
