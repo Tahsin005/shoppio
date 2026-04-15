@@ -10,6 +10,7 @@ import { notFound } from "./middleware/notFound.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { clerkMiddleware } from '@clerk/express';
 import { authRouter } from "./routes/auth/auth.routes.js";
+import { adminProductRouter } from "./routes/auth/admin/product.routes.js";
 
 async function mainEntryFunction() {
     await connectDB();
@@ -40,6 +41,9 @@ async function mainEntryFunction() {
 
     // auth routes
     app.use("/auth", authRouter);
+
+    // admin routes
+    app.use("/admin", adminProductRouter);
 
     app.use(notFound);
     app.use(errorHandler);

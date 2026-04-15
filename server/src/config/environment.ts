@@ -5,6 +5,7 @@ const environment = {
     adminEmails: process.env.ADMIN_EMAILS,
     clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY,
     clerkSecretKey: process.env.CLERK_SECRET_KEY,
+    cloudinaryUrl: process.env.CLOUDINARY_URL,
 };
 
 export default environment;
