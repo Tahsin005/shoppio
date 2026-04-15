@@ -7,6 +7,11 @@ import { ProtectedLayout } from "./components/auth/protected-layout";
 import { RoleGuardLayout } from "./components/auth/role-guard-layout";
 import { AdminLayout } from "./components/layout/admin-layout";
 import { CustomerHomePage } from "./pages/customer/home";
+import AdminDashboard from "./pages/admin/dashboard";
+import AdminProducts from "./pages/admin/products";
+import AdminPromos from "./pages/admin/promos";
+import AdminOrders from "./pages/admin/orders";
+import AdminSettings from "./pages/admin/settings";
 
 export const router = createBrowserRouter([
     {
@@ -50,12 +55,24 @@ export const router = createBrowserRouter([
                         children: [
                             {
                                 index: true,
-                                element: <div>Admin Dashboard</div>
+                                element: <AdminDashboard />
                             },
                             {
                                 path: "products",
-                                element: <div>Admin Products</div>
-                            }
+                                element: <AdminProducts />
+                            },
+                            {
+                                path: "coupons",
+                                element: <AdminPromos />,
+                            },
+                            {
+                                path: "orders",
+                                element: <AdminOrders />,
+                            },
+                            {
+                                path: "settings",
+                                element: <AdminSettings />,
+                            },
                         ]
                     }
                 ]
