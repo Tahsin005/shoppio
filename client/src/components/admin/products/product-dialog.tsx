@@ -1,8 +1,16 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Category, Product } from "@/features/admin/products/types";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { BRANDS } from "@/features/admin/products/constants";
+import type { Category, Product, ProductStatus } from "@/features/admin/products/types";
 import { useProductForm } from "@/features/admin/products/use-product-form";
+import { ColorPicker } from "./color-picker";
+import { SizeSelector } from "./size-selector";
+import { Button } from "@/components/ui/button";
+import { ImagePicker } from "./imagep-picker";
 
 type ProductDialogProps = {
     open: boolean;
@@ -66,6 +74,147 @@ export function ProductDialog({
                                 placeholder="Title"
                             />
                         </div>
+
+                        <div className={fieldGroupClass}>
+                            <Label>Brand</Label>
+                            <Select
+                                value={form.brand}
+                                onValueChange={(val) => updateField("brand", val)}
+                            >
+                                <SelectTrigger>
+                                <SelectValue placeholder="Brand" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    {BRANDS.map((brand) => (
+                                        <SelectItem key={brand} value={brand}>
+                                        {brand}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className={fieldGroupClass}>
+                        <Label>Description</Label>
+                        <Textarea
+                            value={form.description}
+                            onChange={(event) =>
+                                updateField("description", event.target.value)
+                            }
+                            rows={5}
+                            placeholder="Description"
+                        />
+                    </div>
+
+                    <div className={twoColumnGridClass}>
+                        <div className={fieldGroupClass}>
+                            <Label>Category</Label>
+                            <Select
+                                value={form.category}
+                                onValueChange={(val) => updateField("category", val)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map((category) => (
+                                        <SelectItem key={category._id} value={category._id}>
+                                            {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className={fieldGroupClass}>
+                            <Label>Status</Label>
+                            <RadioGroup
+                                value={form.status}
+                                onValueChange={(value) =>
+                                    updateField("status", value as ProductStatus)
+                                }
+                                className={statusGroupClass}
+                            >
+                                <div className={statusItemClass}>
+                                    <RadioGroupItem value="active" id="product-status-active" />
+                                    <Label htmlFor="product-status-active">Active</Label>
+                                </div>
+
+                                <div className={statusItemClass}>
+                                    <RadioGroupItem
+                                        value="inactive"
+                                        id="product-status-inactive"
+                                    />
+                                    <Label htmlFor="product-status-inactive">Inactive</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                    </div>
+
+                    <div className={threeColumnGridClass}>
+                        <div className={fieldGroupClass}>
+                            <Label>Price</Label>
+                            <Input
+                                value={form.price}
+                                onChange={(e) => updateField("price", e.target.value)}
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                            />
+                        </div>
+
+                        <div className={fieldGroupClass}>
+                            <Label>Sale Percentage</Label>
+                            <Input
+                                value={form.salePercentage}
+                                onChange={(e) => updateField("salePercentage", e.target.value)}
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                            />
+                        </div>
+
+                        <div className={fieldGroupClass}>
+                            <Label>Stock</Label>
+                            <Input
+                                value={form.stock}
+                                onChange={(e) => updateField("stock", e.target.value)}
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                            />
+                        </div>
+                    </div>
+
+                    <div className={sectionGridClass}>
+                        <ColorPicker
+                            colors={form.colors}
+                            onAdd={addColor}
+                            onRemove={removeColor}
+                        />
+
+                        <SizeSelector selectedSizes={form.sizes} onToggle={toggleSize} />
+                    </div>
+
+                    <ImagePicker
+                        existingImages={form.existingImages}
+                        newFiles={form.newFiles}
+                        coverImagePublicId={form.coverImagePublicId}
+                        onFilesAdd={addFiles}
+                        onExistingRemove={removeExistingImage}
+                        onCoverImageChange={changeCoverImage}
+                    />
+
+                    <div className={actionsRowClass}>
+                        <Button variant="outline" onClick={() => onOpenChange(false)}>
+                            Cancel
+                        </Button>
+
+                        <Button onClick={submit} disabled={saving}>
+                            {saving ? "Saving..." : isEditMode ? "Update Product" : "Create Product"}
+                        </Button>
                     </div>
                 </div>
             </DialogContent>
