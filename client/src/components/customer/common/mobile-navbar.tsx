@@ -2,8 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, LogIn, LogOut, Menu, ShoppingBag, ShoppingCart, Store, User, type LucideIcon } from "lucide-react";
+import { Heart, LogIn, LogOut, Menu, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useCustomerWishlistStore } from "@/features/customer/wishlist/store";
+import { useCustomerProfileStore } from "@/features/customer/profile/store";
+import { useCustomerCartAndCheckoutStore } from "@/features/customer/cart-and-checkout/store";
+import { useCustomerOrdersStore } from "@/features/customer/orders/store";
+import { useAuth } from "@clerk/react";
+import { useState } from "react";
 
 type CustomerMobileNavbarProps = {
     isSignedIn: boolean;
@@ -12,8 +18,10 @@ type CustomerMobileNavbarProps = {
 
 export type NavItem = {
     label: string;
-    href: string;
+    href?: string;
     icon: LucideIcon;
+    onClick?: () => void;
+    badge?: number;
 };
 
 const collectionsPage: NavItem = {
@@ -44,10 +52,38 @@ function DrawerSection({ title, items }: { title: string; items: NavItem[] }) {
                 {items.map((item) => {
                     const Icon = item.icon;
 
+                    if (item.onClick) {
+                        return (
+                            <button
+                                key={item.label}
+                                type="button"
+                                className={cn(drawerItemLink, "relative w-full text-left")}
+                                onClick={item.onClick}
+                            >
+                                <Icon className="h-4.5 w-4.5" />
+                                <span>{item.label}</span>
+                                {item.badge && item.badge > 0 ? (
+                                    <span className="ms-2 inline-flex min-w-4.5 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold leading-4.5 text-black">
+                                        {item.badge}
+                                    </span>
+                                ) : null}
+                            </button>
+                        );
+                    }
+
                     return (
-                        <Link key={item.label} to={item.href} className={drawerItemLink}>
+                        <Link
+                            key={item.label}
+                            to={item.href || "#"}
+                            className={cn(drawerItemLink, "relative")}
+                        >
                             <Icon className="h-4.5 w-4.5" />
                             <span>{item.label}</span>
+                            {item.badge && item.badge > 0 ? (
+                                <span className="ms-2 inline-flex min-w-4.5 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold leading-4.5 text-black">
+                                    {item.badge}
+                                </span>
+                            ) : null}
                         </Link>
                     );
                 })}
@@ -56,30 +92,72 @@ function DrawerSection({ title, items }: { title: string; items: NavItem[] }) {
     );
 }
 
+import { cn } from "@/lib/utils";
+
 export function CustomerMobileNavbar({
     isSignedIn,
     loading,
 }: CustomerMobileNavbarProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const { signOut } = useAuth();
+    
+    const { items: wishlistItems, setOpen: setWishlistOpen } = useCustomerWishlistStore();
+    const { openProfile } = useCustomerProfileStore();
+    const { setOpen: setCartOpen, cart } = useCustomerCartAndCheckoutStore();
+    const { openOrders } = useCustomerOrdersStore();
+
+    const handleAction = (action: () => void) => {
+        setIsOpen(false);
+        action();
+    };
+
+    const wishlistCount = wishlistItems.length;
+    const cartCount = cart?.items?.length || 0;
+
     const mobileAccountItems: NavItem[] = isSignedIn
         ? [
-            { label: "Account", href: "/account", icon: User },
-            { label: "Wishlist", href: "/wishlist", icon: Heart },
-            { label: "Sign Out", href: "/logout", icon: LogOut },
+            { 
+                label: "Account", 
+                icon: User, 
+                onClick: () => handleAction(() => openProfile()) 
+            },
+            { 
+                label: "My Orders", 
+                icon: ShoppingBasket, 
+                onClick: () => handleAction(() => openOrders()) 
+            },
+            { 
+                label: "Wishlist", 
+                icon: Heart, 
+                badge: wishlistCount,
+                onClick: () => handleAction(() => setWishlistOpen(true)) 
+            },
+            { 
+                label: "Sign Out", 
+                icon: LogOut, 
+                onClick: () => handleAction(() => signOut()) 
+            },
         ]
         : [
             {
-            label: "Login",
-            href: "/sign-in",
-            icon: LogIn,
+                label: "Login",
+                href: "/sign-in",
+                icon: LogIn,
             },
         ];
+
     return (
         <div className={mobileWrap}>
-            <Link to={"/cart"} className={iconLink}>
+            <div 
+                className={iconLink} 
+                onClick={() => setCartOpen(true)}
+                role="button"
+                tabIndex={0}
+            >
                 <ShoppingCart className="h-4.5 w-4.5" />
-                <span className={cartBadge}>{0}</span>
-            </Link>
-            <Sheet>
+                <span className={cartBadge}>{cartCount}</span>
+            </div>
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
                     <Button variant={"ghost"} size={"icon"} className={menuButton}>
                         <Menu className="h-5 w-5" />
@@ -91,13 +169,23 @@ export function CustomerMobileNavbar({
                         <SheetTitle>Menu</SheetTitle>
                     </SheetHeader>
                     <div className={brandBlock}>
-                        <Link to={"/"} className={brandWrap}>
+                        <Link 
+                            to={"/"} 
+                            className={brandWrap}
+                            onClick={() => setIsOpen(false)}
+                        >
                             <Store className="h-10 w-10" />
                             <span className={brandTitle}>Shoppio</span>
                         </Link>
                     </div>
                     <Separator />
-                    <DrawerSection title="Collections" items={[collectionsPage]} />
+                    <DrawerSection 
+                        title="Collections" 
+                        items={[{ 
+                            ...collectionsPage, 
+                            onClick: () => setIsOpen(false) 
+                        }]} 
+                    />
 
                     <Separator />
                     {loading ? (
@@ -113,5 +201,5 @@ export function CustomerMobileNavbar({
                 </SheetContent>
             </Sheet>
         </div>
-    )
+    );
 }

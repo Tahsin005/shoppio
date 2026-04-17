@@ -26,11 +26,9 @@ const tableHeaderClass = "flex flex-row items-center justify-between gap-3";
 function AdminSettings() {
     const {
         items,
-        files,
         setFiles,
         fileCountLabel,
         loading,
-        setLoading,
         refreshBanners,
         handleUpload,
         uploading,

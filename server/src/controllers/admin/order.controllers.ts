@@ -6,6 +6,7 @@ import { Product } from "../../models/Product.js";
 import { requireFound, requireText } from "../../utils/helpers.js";
 import { AppError } from "../../utils/AppError.js";
 import { type Request, type Response } from "express";
+import { User } from "../../models/User.js";
 
 const ALLOWED_ORDER_STATUSES = [
     "placed",
@@ -79,14 +80,22 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
     // add the points to that user points
 
     if (orderStatus === "returned" && foundOrder.orderStatus !== "returned") {
-      for (const item of foundOrder.items) {
-        await Product.updateOne(
-            { _id: item.product },
-            {
-                $inc: { stock: item.quantity },
-            },
+        // restock products
+        for (const item of foundOrder.items) {
+            await Product.updateOne(
+                { _id: item.product },
+                { $inc: { stock: item.quantity } },
+            );
+        }
+
+        // refund points to user
+        await User.updateOne(
+            { _id: foundOrder.user },
+            { $inc: { points: foundOrder.totalAmount } },
         );
-      }
+
+        // set returnedAt
+        foundOrder.returnedAt = new Date();
     }
 
     if (orderStatus === "delivered" && !foundOrder.deliveredAt) {

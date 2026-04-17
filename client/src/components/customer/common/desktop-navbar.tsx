@@ -189,7 +189,10 @@ export function CustomerNavbar() {
                     </div>
                 </nav>
 
-                <CustomerMobileNavbar isSignedIn={!!isSignedIn} />
+                <CustomerMobileNavbar
+                    isSignedIn={!!isSignedIn}
+                    loading={isLoading}
+                />
 
                 {showSignInUi ? <CustomerWishlistDialog /> : null}
                 {showSignInUi ? <CustomerProfileDialog /> : null}

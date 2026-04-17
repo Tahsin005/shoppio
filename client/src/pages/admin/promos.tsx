@@ -20,7 +20,6 @@ function AdminPromos() {
         editingPromo,
         openCreateDialog,
         closePromoDialog,
-        refreshAll,
         savePromo,
         removePromo,
         saving,

@@ -42,6 +42,7 @@ const orderStatusOptions: AdminOrderStatus[] = [
     "placed",
     "shipped",
     "delivered",
+    "returned",
 ];
 
 function formatDate(value?: string | null) {
@@ -57,7 +58,6 @@ function AdminPaymentStatusBadge(props: { status: AdminPaymentStatus }) {
 
 function canUpdateStatus(order: AdminOrder) {
     if (order.paymentStatus !== "paid") return false;
-    if (order.orderStatus === "delivered") return false;
     if (order.orderStatus === "returned") return false;
 
     return true;
@@ -95,13 +95,15 @@ function AdminOrders() {
                             <div className={tableWrapClass}>
                                 <Table>
                                     <TableHeader>
-                                        <TableHead>Order</TableHead>
-                                        <TableHead>Customer</TableHead>
-                                        <TableHead>Items</TableHead>
-                                        <TableHead>Amount</TableHead>
-                                        <TableHead>Payment</TableHead>
-                                        <TableHead>Paid at</TableHead>
-                                        <TableHead className="text-right">Update</TableHead>
+                                        <TableRow>
+                                            <TableHead>Order</TableHead>
+                                            <TableHead>Customer</TableHead>
+                                            <TableHead>Items</TableHead>
+                                            <TableHead>Amount</TableHead>
+                                            <TableHead>Payment</TableHead>
+                                            <TableHead>Paid at</TableHead>
+                                            <TableHead className="text-right">Update</TableHead>
+                                        </TableRow>
                                     </TableHeader>
 
                                     <TableBody>
@@ -148,7 +150,9 @@ function AdminOrders() {
                                                                             value={status}
                                                                             disabled={
                                                                                 status === "placed" ||
-                                                                                status === order.orderStatus
+                                                                                status === order.orderStatus ||
+                                                                                (order.orderStatus === "delivered" &&
+                                                                                    status === "shipped")
                                                                             }
                                                                         >
                                                                             {status}
