@@ -6,6 +6,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, LogIn, LogOut, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CustomerMobileNavbar } from "./mobile-navbar";
+import CustomerWishlistDialog from "../wishlist/customer-wishlist-dialog";
+import { useCustomerWishlistStore } from "@/features/customer/wishlist/store";
+import { useCustomerProfileStore } from "@/features/customer/profile/store";
+import { useCustomerCartAndCheckoutStore } from "@/features/customer/cart-and-checkout/store";
+import { useCustomerOrdersStore } from "@/features/customer/orders/store";
+import { useEffect } from "react";
+import CustomerProfileDialog from "../profile/customer-profile-dialog";
+import CustomerOrdersDialog from "../orders/customer-orders-dialog";
+import CustomerCartAndCheckoutDrawer from "../cart-and-checkout/customer-cart-and-checkout-drawer";
 
 const shell = "mx-auto flex h-[72px] max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8";
 const headerClass = "sticky top-0 z-50 border-b border-border/70 bg-secondary/60 backdrop-blur-xl";
@@ -56,8 +65,48 @@ export function CustomerNavbar() {
     const { isSignedIn, signOut, isLoaded } = useAuth();
     const { isBootstrapped } = useAuthStore();
 
-    const isLoading = !isLoaded || !isBootstrapped;
+    const {
+        items: wishlistItems,
+        loadWishlist,
+        clear: clearWishlist,
+        setOpen: setWishlistOpen,
+    } = useCustomerWishlistStore((state) => state);
+
+    const { openProfile, clear: clearProfile } = useCustomerProfileStore(
+        (state) => state,
+    );
+
+    const { setOpen, cart, loadCart } = useCustomerCartAndCheckoutStore(
+        (state) => state,
+    );
+
+    const { openOrders } = useCustomerOrdersStore((state) => state);
+
+    useEffect(() => {
+        if (!isLoaded || !isBootstrapped) return;
+
+        void loadCart(Boolean(isSignedIn));
+
+        if (!isSignedIn) {
+            clearWishlist();
+            clearProfile();
+            return;
+        }
+
+        void loadWishlist();
+    }, [
+        clearWishlist,
+        isBootstrapped,
+        clearProfile,
+        isSignedIn,
+        isLoaded,
+        loadWishlist,
+        loadCart,
+    ]);
+
     const showSignInUi = isLoaded && isBootstrapped && isSignedIn;
+    const wishlistCount = wishlistItems.length;
+    const isLoading = !isLoaded || !isBootstrapped;
 
     return (
         <header className={headerClass}>
@@ -87,17 +136,17 @@ export function CustomerNavbar() {
                                 <button
                                     type="button"
                                     className={iconLink}
+                                    onClick={() => setWishlistOpen(true)}
                                 >
                                     <Heart className="w-[20px] h-[20px]" />
-                                    <span className={wishlistBadge}>{0}</span>
+                                    <span className={wishlistBadge}>{wishlistCount}</span>
                                 </button>
                             ) : null}
-
                             {isSignedIn ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant={"ghost"} className={dropdownButton}>
-                                            <User className="h-4.5 w-4.5" />
+                                        <User className="h-4.5 w-4.5" />
                                             Account
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -106,19 +155,19 @@ export function CustomerNavbar() {
                                         className={accountDropdownContent}
                                     >
                                         <DropdownMenuItem
+                                            onClick={() => void openProfile()}
                                             className={dropdownItemLink}
                                         >
                                             <User className="h-4 w-4" />
                                             <span>My Account</span>
                                         </DropdownMenuItem>
-
                                         <DropdownMenuItem
+                                            onClick={() => void openOrders()}
                                             className={dropdownItemLink}
                                         >
                                             <ShoppingBasket className="h-4 w-4" />
                                             <span>My Orders</span>
                                         </DropdownMenuItem>
-
                                         <DropdownMenuItem
                                             onClick={() => signOut()}
                                             className={dropdownItemLink}
@@ -134,17 +183,19 @@ export function CustomerNavbar() {
                         </>
                     )}
 
-                    <div className={iconLink}>
+                    <div onClick={() => setOpen(true)} className={iconLink}>
                         <ShoppingCart className="h-4.5 w-4.5" />
-                        <span className={cartBadge}>0</span>
+                        <span className={cartBadge}>{cart?.items?.length}</span>
                     </div>
                 </nav>
 
-                <CustomerMobileNavbar
-                    isSignedIn={!!isSignedIn}
-                    loading={isLoading}
-                />
+                <CustomerMobileNavbar isSignedIn={!!isSignedIn} />
+
+                {showSignInUi ? <CustomerWishlistDialog /> : null}
+                {showSignInUi ? <CustomerProfileDialog /> : null}
+                {showSignInUi ? <CustomerOrdersDialog /> : null}
+                <CustomerCartAndCheckoutDrawer />
             </div>
         </header>
-    )
+    );
 }
