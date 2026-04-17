@@ -5,6 +5,7 @@ import { ok } from "../../utils/envelope.js";
 import { Product } from "../../models/Product.js";
 import { requireFound, requireText } from "../../utils/helpers.js";
 import { AppError } from "../../utils/AppError.js";
+import { type Request, type Response } from "express";
 
 const ALLOWED_ORDER_STATUSES = [
     "placed",
@@ -29,7 +30,7 @@ type AdminOrderRow = {
     createdAt: Date;
 };
 
-export const getOrders = asyncHandler(async (req, res) => {
+export const getOrders = asyncHandler(async (_req: Request, res: Response) => {
     const orders = await Order.find()
         .select(
             "customerName customerEmail totalItems totalAmount paymentStatus orderStatus  paidAt deliveredAt returnedAt createdAt",
@@ -57,7 +58,7 @@ export const getOrders = asyncHandler(async (req, res) => {
     );
 });
 
-export const updateOrderStatus = asyncHandler(async (req, res) => {
+export const updateOrderStatus = asyncHandler(async (req: Request, res: Response) => {
     const orderId = String(req.params.orderId || "").trim();
     const orderStatus = String(
         req.body.orderStatus || "",

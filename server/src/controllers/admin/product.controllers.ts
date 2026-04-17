@@ -6,6 +6,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { uploadManyBuffersToCloudinary } from "../../utils/cloudinary.js";
 import { ok } from "../../utils/envelope.js";
 import { requireFound, requireNumber, requireText } from "../../utils/helpers.js";
+import { type Request, type Response } from "express";
 
 type UploadedImage = {
     url: string;
@@ -14,7 +15,7 @@ type UploadedImage = {
 };
 
 //  categories
-export const getCategories = asyncHandler(async (req, res) => {
+export const getCategories = asyncHandler(async (_req: Request, res: Response) => {
     const categories = await Category.find({}).sort({
         name: 1,
     });
@@ -22,7 +23,7 @@ export const getCategories = asyncHandler(async (req, res) => {
     res.json(ok(categories));
 });
 
-export const addCategory = asyncHandler(async (req, res) => {
+export const addCategory = asyncHandler(async (req: Request, res: Response) => {
     const name = String(req.body.name || "").trim();
 
     requireText(name, "Category name is required");
@@ -32,7 +33,7 @@ export const addCategory = asyncHandler(async (req, res) => {
     res.status(201).json(ok(category));
 });
 
-export const updateCategory = asyncHandler(async (req, res) => {
+export const updateCategory = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const name = String(req.body.name || "").trim();
 
@@ -49,7 +50,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
 
 
 // products
-export const getProducts = asyncHandler(async (req, res) => {
+export const getProducts = asyncHandler(async (req: Request, res: Response) => {
     const search = String(req.query.search || "").trim();
     const query: Record<string, unknown> = {};
 
@@ -64,7 +65,7 @@ export const getProducts = asyncHandler(async (req, res) => {
     res.json(ok(products));
 });
 
-export const getProduct = asyncHandler(async (req, res) => {
+export const getProduct = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const product = await Product.findById(id).populate(
@@ -143,7 +144,7 @@ export const addProduct = asyncHandler(async (req, res) => {
     res.status(201).json(ok(createdProduct));
 });
 
-export const updateProduct = asyncHandler(async (req, res) => {
+export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
     const productId = req.params.id as string;
     const title = String(req.body.title || "").trim();
     const description = String(req.body.description || "").trim();

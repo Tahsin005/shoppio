@@ -1,10 +1,10 @@
 import { Types } from "mongoose";
-import { Request } from "express";
 import { Promo } from "../../models/Promo.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ok } from "../../utils/envelope.js";
 import { AppError } from "../../utils/AppError.js";
 import { requireFound, requireText } from "../../utils/helpers.js";
+import { type Request, type Response } from "express";
 
 type PromoDbItem = {
     _id?: Types.ObjectId;
@@ -83,7 +83,7 @@ async function getAllPromos() {
     return promos.map((item) => mapPromo(item.toObject()));
 }
 
-export const getPromos = asyncHandler(async (req, res) => {
+export const getPromos = asyncHandler(async (_req: Request, res: Response) => {
     res.json(
         ok({
             items: await getAllPromos(),
@@ -91,7 +91,7 @@ export const getPromos = asyncHandler(async (req, res) => {
     );
 });
     
-export const addPromo = asyncHandler(async (req, res) => {
+export const addPromo = asyncHandler(async (req: Request, res: Response) => {
     const payload = parsePromoPayload(req);
 
     const existingPromo = await Promo.findOne({ code: payload.code });
@@ -109,7 +109,7 @@ export const addPromo = asyncHandler(async (req, res) => {
     );
 });
 
-export const updatePromo = asyncHandler(async (req, res) => {
+export const updatePromo = asyncHandler(async (req: Request, res: Response) => {
     const promoId = String(req.params.promoId || "").trim();
     requireText(promoId, "Promo Id is needed here");
 
@@ -143,7 +143,7 @@ export const updatePromo = asyncHandler(async (req, res) => {
     );
 });
 
-export const deletePromo = asyncHandler(async (req, res) => {
+export const deletePromo = asyncHandler(async (req: Request, res: Response) => {
     const promoId = String(req.params.promoId || "").trim();
     requireText(promoId, "Promo Id is needed here");
 
