@@ -11,7 +11,6 @@ import type {
 import {
     addCustomerCartItem,
     applyCustomerPromo,
-    confirmCheckout,
     createCheckoutSession,
     decreaseCustomerCartItem,
     getCheckoutData,
@@ -29,11 +28,9 @@ type AddCartItemInput = AddCustomerCartItemBody & {
     finalPrice: number;
 };
 
-type RazorpayArgs = {
+type MoneybagArgs = {
     isSignedIn: boolean;
-    name: string;
-    email: string;
-    onSuccess: () => void;
+    onSuccess?: () => void;
 };
 
 type PointsArgs = {
@@ -72,7 +69,7 @@ type CustomerCartAndCheckoutStore = {
     setPromoInput: (value: string) => void;
     clearPromo: () => void;
     applyPromo: () => Promise<void>;
-    startRazorpayCheckout: (args: RazorpayArgs) => Promise<void>;
+    startMoneybagCheckout: (args: MoneybagArgs) => Promise<void>;
     startPointsCheckout: (args: PointsArgs) => Promise<void>;
     clear: () => void;
 };
@@ -94,29 +91,6 @@ const defaultUiState = {
     pointsCheckoutLoading: false,
 };
 
-function waitForRazorpay(timeOut = 4000): Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (window.Razorpay) {
-            resolve();
-            return;
-        }
-
-        const start = Date.now();
-
-        const interval = window.setInterval(() => {
-            if (window.Razorpay) {
-                window.clearInterval(interval);
-                resolve();
-                return;
-            }
-
-            if (Date.now() - start > timeOut) {
-                window.clearInterval(interval);
-                reject(new Error("Razorpay not loaded"));
-            }
-        }, 30);
-    });
-}
 
 // helpers
 
@@ -400,11 +374,11 @@ export const useCustomerCartAndCheckoutStore = create<CustomerCartAndCheckoutSto
             ...defaultUiState,
         }),
 
-    startRazorpayCheckout: async ({ isSignedIn, name, email, onSuccess }) => {
+    startMoneybagCheckout: async ({ isSignedIn }) => {
         const { selectedAddressId, appliedPromo, cart } = get();
 
         if (!isSignedIn) {
-            toast.error("sign in to checkout");
+            toast.error("Sign in to checkout");
             return;
         }
 
@@ -426,61 +400,13 @@ export const useCustomerCartAndCheckoutStore = create<CustomerCartAndCheckoutSto
                 promoCode: appliedPromo?.code || undefined,
             });
 
-            if (
-                !session.razorpay?.keyId ||
-                !session.razorpay.orderId ||
-                !session.order._id
-            ) {
+            if (!session?.checkoutUrl || !session.order._id) {
                 throw new Error("Invalid checkout session");
             }
 
-            //load the razorpay instance
+            // Redirect browser to Moneybag hosted payment page
+            window.location.href = session.checkoutUrl;
 
-            await waitForRazorpay();
-
-            if (!window.Razorpay) {
-                throw new Error("Razorpay not loaded");
-            }
-            const razorpay = new window.Razorpay({
-                key: session.razorpay.keyId,
-                amount: session.razorpay.amount,
-                currency: session.razorpay.currency,
-                order_id: session.razorpay.orderId,
-                name: "Monster E-commerce",
-                description: "Order payment",
-                prefill: { name, email },
-                handler: async (response) => {
-                        try {
-                        const confirmed = await confirmCheckout({
-                            orderId: session.order._id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_signature: response.razorpay_signature,
-                        });
-                        if (!confirmed._id) {
-                            throw new Error("Order confirmation failed");
-                        }
-
-                        set({
-                            cart: emptyCart,
-                            isOpen: false,
-                            ...defaultUiState,
-                        });
-
-                        toast.success("Payment successfull");
-                        onSuccess();
-                    } catch {
-                    set({ checkoutLoading: false });
-                    toast.error("Payment confirmation failed");
-                    }
-                },
-
-                modal: {
-                    ondismiss: () => set({ checkoutLoading: false }),
-                },
-            });
-
-            razorpay.open();
         } catch {
             set({ checkoutLoading: false });
             toast.error("Unable to start checkout");

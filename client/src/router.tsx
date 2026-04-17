@@ -15,6 +15,9 @@ import AdminSettings from "./pages/admin/settings";
 import Collections from "./pages/customer/collections";
 import CollectionDetails from "./pages/customer/collection-details";
 import CustomerOrderSuccessPage from "./pages/customer/order-success";
+import PaymentSuccessPage from "./pages/customer/payment-success";
+import PaymentFailPage from "./pages/customer/payment-fail";
+import PaymentCancelPage from "./pages/customer/payment-cancel";
 
 export const router = createBrowserRouter([
     {
@@ -54,7 +57,19 @@ export const router = createBrowserRouter([
                         element: <CustomerOrderSuccessPage />,
                     },
                 ]
-            }
+            },
+            {
+                path: "payment/success",
+                element: <PaymentSuccessPage />,
+            },
+            {
+                path: "payment/fail",
+                element: <PaymentFailPage />,
+            },
+            {
+                path: "payment/cancel",
+                element: <PaymentCancelPage />,
+            },
         ]
     },
     {

@@ -10,8 +10,9 @@ import { AppError } from "../../utils/AppError.js";
 import { Promo } from "../../models/Promo.js";
 import { Order } from "../../models/Order.js";
 import { ok } from "../../utils/envelope.js";
-import { razorpay, toSubUnits } from "../../utils/razorpay.js";
-import crypto from "crypto";
+import { moneybag, PAYMENT_STATUS, CURRENCY_CODES } from "../../utils/moneybag.js";
+import environment from "../../config/environment.js";
+import { ValidationException, ApiException } from "@moneybag/sdk";
 
 type UserAddressRow = {
     _id: Types.ObjectId;
@@ -19,6 +20,8 @@ type UserAddressRow = {
     address: string;
     state: string;
     postalCode: string;
+    phone?: string;
+    city?: string;
 };
 
 type CheckoutUserRow = {
@@ -58,18 +61,15 @@ export const createCheckoutSession = asyncHandler(async (req: Request, res: Resp
     const dbUser = await getDbUserFromReq(req);
     const addressId = String(req.body.addressId || "").trim();
     const promoCode = String(req.body.promoCode || "")
-      .trim()
-      .toUpperCase();
+        .trim()
+        .toUpperCase();
 
     requireText(addressId, "Address is required");
-
-    //get user and cart info
 
     const [user, cart] = await Promise.all([
         User.findById(dbUser._id)
             .select("name email addresses")
             .lean<CheckoutUserRow | null>(),
-
         Cart.findOne({ user: dbUser._id }).select("items").lean<CartRow | null>(),
     ]);
 
@@ -105,7 +105,7 @@ export const createCheckoutSession = asyncHandler(async (req: Request, res: Resp
         const product = productMap.get(String(cartItem.product));
 
         if (!product || product.status !== "active") {
-            throw new AppError(400, "One or more cart items are not avaibale");
+            throw new AppError(400, "One or more cart items are not available");
         }
 
         if (product.stock < cartItem.quantity) {
@@ -143,14 +143,11 @@ export const createCheckoutSession = asyncHandler(async (req: Request, res: Resp
             now > foundPromo.endsAt ||
             foundPromo.count < 1
         ) {
-            throw new AppError(400, "promo code is not active");
+            throw new AppError(400, "Promo code is not active");
         }
 
         if (subTotal < foundPromo.minimumOrderValue) {
-            throw new AppError(
-            400,
-            "Minimum order value for this promo is not at the threesold",
-            );
+            throw new AppError(400, "Minimum order value for this promo is not met");
         }
 
         appliedPromoCode = foundPromo.code;
@@ -159,11 +156,13 @@ export const createCheckoutSession = asyncHandler(async (req: Request, res: Resp
 
     const totalAmount = Math.max(subTotal - discountAmount, 0);
 
-    const razorpayOrder = await razorpay.orders.create({
-        amount: toSubUnits(totalAmount),
-        currency: "INR",
-        receipt: `Order_${Date.now()}`,
-    });
+    if (totalAmount < 10) {
+        throw new AppError(400, "Order amount must be at least 10 BDT");
+    }
+
+    const moneybagOrderId = `ORD${Date.now()}`;
+
+    const clientBase = environment.clientBaseUrl || "http://localhost:5173";
 
     const deliveryAddress = [
         selectedAddress.address,
@@ -186,94 +185,156 @@ export const createCheckoutSession = asyncHandler(async (req: Request, res: Resp
         totalAmount,
         paymentStatus: "pending",
         orderStatus: "placed",
-        razorpayOrderId: razorpayOrder.id,
+        paymentSessionId: "",
     });
 
-    res.json(
-        ok({
-            razorpay: {
-                keyId: process.env.RAZORPAY_KEY_ID,
-                orderId: razorpayOrder.id,
-                amount: razorpayOrder.amount,
-                currency: razorpayOrder.currency,
+    try {
+        const moneybagSession = await moneybag.checkout({
+            order_id: moneybagOrderId,
+            currency: CURRENCY_CODES.BDT,
+            order_amount: totalAmount.toFixed(2),
+            order_description: `Order #${String(order._id).slice(-8).toUpperCase()}`,
+            success_url: `${clientBase}/payment/success?order_id=${order._id}`,
+            cancel_url: `${clientBase}/payment/cancel?order_id=${order._id}`,
+            fail_url: `${clientBase}/payment/fail?order_id=${order._id}`,
+            customer: {
+                name: foundUser.name || selectedAddress.fullName,
+                email: foundUser.email || "customer@example.com",
+                address: selectedAddress.address || "N/A",
+                city: selectedAddress.city || "Dhaka",
+                postcode: selectedAddress.postalCode || "1000",
+                country: "Bangladesh",
+                phone: selectedAddress.phone || "01700000000",
             },
-            order: {
-                _id: String(order._id),
-                totalItems,
-                discountAmount,
-                totalAmount,
+            shipping: {
+                name: selectedAddress.fullName,
+                address: selectedAddress.address || "N/A",
+                city: selectedAddress.city || "Dhaka",
+                postcode: selectedAddress.postalCode || "1000",
+                country: "Bangladesh",
             },
-        }),
-    );
+            order_items: items.map((item) => ({
+                sku: String(item.product),
+                net_amount: totalAmount.toFixed(2),
+            })),
+            payment_info: {
+                is_recurring: false,
+                installments: 0,
+                currency_conversion: false,
+                allowed_payment_methods: ["card", "mobile_banking"],
+                requires_emi: false,
+            },
+        });
+
+        const sessionRef = `${moneybagSession.data.session_id}|${String(order._id)}|${moneybagOrderId}`;
+        order.paymentSessionId = sessionRef;
+        await order.save();
+
+        res.json(
+            ok({
+                checkoutUrl: moneybagSession.data.checkout_url,
+                order: {
+                    _id: String(order._id),
+                    totalItems,
+                    discountAmount,
+                    totalAmount,
+                },
+            }),
+        );
+    } catch (error) {
+        await Order.findByIdAndDelete(order._id);
+
+        if (error instanceof ValidationException) {
+            throw new AppError(400, `Moneybag validation failed: ${error.message}`);
+        } else if (error instanceof ApiException) {
+            throw new AppError(500, `Moneybag API error: ${error.message}`);
+        }
+        throw error;
+    }
 });
 
-export const checkoutConfirm =   asyncHandler(async (req: Request, res: Response) => {
+export const verifyCheckout = asyncHandler(async (req: Request, res: Response) => {
     const dbUser = await getDbUserFromReq(req);
-    const orderId = String(req.body.orderId || "").trim();
-    const razorpayPaymentId = String(req.body.razorpay_payment_id || "").trim();
-    const razorpayOrderId = String(req.body.razorpay_order_id || "").trim();
-    const razorpaySignature = String(req.body.razorpay_signature || "").trim();
+    const transactionId = String(req.query.transaction_id || "").trim();
+    const orderId = String(req.query.order_id || "").trim();
 
-    requireText(orderId, "Order id is needed");
-    requireText(razorpayPaymentId, "razorpayPaymentId is needed");
-    requireText(razorpayOrderId, "razorpayOrderId is needed");
-    requireText(razorpaySignature, "razorpaySignature is needed");
+    requireText(transactionId, "transaction_id is required");
 
-    const order = await Order.findOne({ _id: orderId, user: dbUser._id });
-    const foundOrder = requireFound(order, "Order not found", 404);
-
-    if (foundOrder.paymentStatus === "paid") {
-        res.json(ok({ _id: String(foundOrder._id) }));
-        return;
+    let order;
+    if (orderId) {
+        order = await Order.findOne({ _id: orderId, user: dbUser._id });
     }
 
-    if (foundOrder.razorpayOrderId !== razorpayOrderId) {
-        throw new AppError(400, "Order id mismatch");
-    }
+    try {
+        const verifyResult = await moneybag.verify(transactionId);
 
-    const signature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
-        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-        .digest("hex");
-
-    if (signature !== razorpaySignature) {
-        throw new AppError(400, "Invalid payment signature");
-    }
-
-    for (const item of foundOrder.items) {
-        const updated = await Product.updateOne(
-            {
-                _id: item.product,
-                stock: { $gte: item.quantity },
-            },
-            {
-                $inc: { stock: -item.quantity },
-            },
-        );
-
-        if (!updated.matchedCount) {
-            throw new AppError(400, "One or more cart items are out of stock");
+        if (!order) {
+            order = await Order.findOne({
+                user: dbUser._id,
+                paymentSessionId: { $regex: verifyResult.data.order_id },
+            });
         }
+
+        const foundOrder = requireFound(order, "Order not found", 404);
+
+        if (foundOrder.paymentStatus === "paid") {
+            res.json(ok({ _id: String(foundOrder._id), status: PAYMENT_STATUS.SUCCESS }));
+            return;
+        }
+
+        if (!verifyResult.data.verified || verifyResult.data.status !== PAYMENT_STATUS.SUCCESS) {
+            if (
+                ["FAILED", "CANCELLED", "EXPIRED"].includes(verifyResult.data.status)
+            ) {
+                foundOrder.paymentStatus = "failed";
+                await foundOrder.save();
+            }
+
+            res.json(
+                ok({
+                    _id: String(foundOrder._id),
+                    status: verifyResult.data.status,
+                    verified: false,
+                }),
+            );
+            return;
+        }
+
+        for (const item of foundOrder.items) {
+            const updated = await Product.updateOne(
+                {
+                    _id: item.product,
+                    stock: { $gte: item.quantity },
+                },
+                {
+                    $inc: { stock: -item.quantity },
+                },
+            );
+
+            if (!updated.matchedCount) {
+                throw new AppError(400, "One or more cart items are out of stock");
+            }
+        }
+
+        if (foundOrder.promoCode) {
+            await Promo.updateOne(
+                { code: foundOrder.promoCode, count: { $gt: 0 } },
+                { $inc: { count: -1 } },
+            );
+        }
+
+        await Cart.updateOne({ user: dbUser._id }, { $set: { items: [] } });
+
+        foundOrder.paymentStatus = "paid";
+        foundOrder.paymentId = transactionId;
+        foundOrder.paidAt = new Date();
+        await foundOrder.save();
+
+        res.json(ok({ _id: String(foundOrder._id), status: PAYMENT_STATUS.SUCCESS, verified: true }));
+    } catch (error) {
+        if (error instanceof ApiException) {
+            throw new AppError(500, `Moneybag Verification Failed: ${error.message}`);
+        }
+        throw error;
     }
-
-    if (foundOrder.promoCode) {
-        await Promo.updateOne(
-            {
-                code: foundOrder.promoCode,
-                count: { $gt: 0 },
-            },
-            {
-                $inc: { count: -1 },
-            },
-        );
-    }
-
-    await Cart.updateOne({ user: dbUser._id }, { $set: { items: [] } });
-
-    foundOrder.paymentStatus = "paid";
-    foundOrder.paymentId = razorpayPaymentId;
-    foundOrder.paidAt = new Date();
-    await foundOrder.save();
-
-    res.json(ok({ _id: String(foundOrder._id) }));
 });

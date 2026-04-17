@@ -79,8 +79,6 @@ export const createCheckoutWithPoints = asyncHandler(async (req: Request, res: R
 
     requireText(addressId, "Address is required");
 
-    //get user and cart info
-
     const [user, cart] = await Promise.all([
         User.findById(dbUser._id)
             .select("name email addresses")
@@ -247,7 +245,7 @@ export const createCheckoutWithPoints = asyncHandler(async (req: Request, res: R
             totalAmount,
             paymentStatus: "paid",
             orderStatus: "placed",
-            razorpayOrderId: pointsPaymentId,
+            paymentSessionId: pointsPaymentId,
             paymentId: pointsPaymentId,
             paidAt: new Date(),
         });

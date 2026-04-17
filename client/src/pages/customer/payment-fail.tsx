@@ -1,38 +1,35 @@
-import { CheckCircle2 } from "lucide-react";
+import { XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-
 import { Button } from "../../components/ui/button";
 
-const pageWrapClass = "flex min-h-screen items-center justify-center bg-background px-4";
-const cardClass = "w-full max-w-xl space-y-5 border border-border bg-card p-8 text-center";
-const iconWrapClass = "mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary";
+const pageClass = "flex min-h-screen items-center justify-center bg-background px-4";
+const cardClass = "w-full max-w-xl space-y-6 border border-border bg-card p-8 text-center";
+const iconClass = "mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive";
 const titleClass = "text-2xl font-semibold text-foreground";
 const textClass = "text-sm text-muted-foreground";
 const buttonRowClass = "flex flex-col gap-3 sm:flex-row sm:justify-center";
 const buttonClass = "rounded-none";
 
-export default function CustomerOrderSuccessPage() {
+export default function PaymentFailPage() {
     return (
-        <div className={pageWrapClass}>
+        <div className={pageClass}>
             <div className={cardClass}>
-                <div className={iconWrapClass}>
-                    <CheckCircle2 className="h-8 w-8" />
+                <div className={iconClass}>
+                    <XCircle className="h-8 w-8" />
                 </div>
-
                 <div className="space-y-2">
-                    <h1 className={titleClass}>Order placed successfully</h1>
+                    <h1 className={titleClass}>Payment failed</h1>
                     <p className={textClass}>
-                        Your payment is complete and your order is confirmed.
+                        Your payment could not be processed. Please try again or use a
+                        different payment method.
                     </p>
                 </div>
-
                 <div className={buttonRowClass}>
                     <Button asChild className={buttonClass}>
-                        <Link to="/collections">Continue shopping</Link>
-                    </Button>
-
-                    <Button asChild variant="outline" className={buttonClass}>
                         <Link to="/">Go to home</Link>
+                    </Button>
+                    <Button asChild variant="outline" className={buttonClass}>
+                        <Link to="/collections">Browse products</Link>
                     </Button>
                 </div>
             </div>

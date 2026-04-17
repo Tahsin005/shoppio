@@ -9,7 +9,7 @@ import { useCustomerCartAndCheckoutStore } from "@/features/customer/cart-and-ch
 import CustomerCartItems from "./customer-cart-items";
 import { useEffect } from "react";
 import { useAuthStore } from "@/features/auth/store";
-import { useAuth, useUser } from "@clerk/react";
+import { useAuth } from "@clerk/react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,6 @@ function SummaryRow(props: { label: string; value: string | number }) {
 function CustomerCartAndCheckoutDrawer() {
     const { isBootstrapped } = useAuthStore();
     const { isLoaded, isSignedIn } = useAuth();
-    const { user } = useUser();
     const navigate = useNavigate();
     const {
         isOpen,
@@ -67,7 +66,7 @@ function CustomerCartAndCheckoutDrawer() {
         setPromoInput,
         clearPromo,
         applyPromo,
-        startRazorpayCheckout,
+        startMoneybagCheckout,
         startPointsCheckout,
         loading,
         cart,
@@ -190,13 +189,8 @@ function CustomerCartAndCheckoutDrawer() {
                                         <DrawerFooter className={actionClass}>
                                             <Button
                                                 onClick={() => {
-                                                    void setOpen(false);
-                                                    void startRazorpayCheckout({
+                                                    void startMoneybagCheckout({
                                                         isSignedIn: Boolean(isSignedIn),
-                                                        name: user?.fullName || "Customer",
-                                                        email:
-                                                        user?.primaryEmailAddress?.emailAddress || "",
-                                                        onSuccess: () => navigate("/order-success"),
                                                     });
                                                 }}
                                                 type="button"
@@ -210,8 +204,8 @@ function CustomerCartAndCheckoutDrawer() {
                                                 }
                                             >
                                                 {checkoutLoading
-                                                ? "Processing..."
-                                                : "Pay with Razorpay"}
+                                                    ? "Processing..."
+                                                    : "Pay with Moneybag"}
                                             </Button>
                                             <Button
                                                 onClick={() => {

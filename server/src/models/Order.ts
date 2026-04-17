@@ -21,7 +21,7 @@ export type Order = {
     totalAmount: number;
     paymentStatus: PaymentStatus;
     orderStatus: OrderStatus;
-    razorpayOrderId: string;
+    paymentSessionId: string;
     paymentId?: string;
     paidAt?: Date | null;
     deliveredAt?: Date | null;
@@ -110,9 +110,9 @@ const OrderSchema = new Schema<Order>(
             enum: ["placed", "shipped", "delivered", "returned"],
             default: "placed",
         },
-        razorpayOrderId: {
+        paymentSessionId: {
             type: String,
-            required: true,
+            default: "",
             trim: true,
         },
         paymentId: {

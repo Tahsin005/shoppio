@@ -42,18 +42,19 @@ export type AppliedPromo = {
 };
 
 export type CheckoutSessionResponse = {
-    razorpay: {
-        keyId: string;
-        orderId: string;
-        amount: number;
-        currency: string;
-    };
+    checkoutUrl: string;
     order: {
         _id: string;
         totalItems: number;
         discountAmount: number;
         totalAmount: number;
     };
+};
+
+export type PaymentVerifyResponse = {
+    _id: string;
+    status: "SUCCESS" | "FAILED" | "PENDING" | "CANCELLED" | "EXPIRED" | "REFUNDED";
+    verified?: boolean;
 };
 
 export type CheckoutConfirmResponse = {

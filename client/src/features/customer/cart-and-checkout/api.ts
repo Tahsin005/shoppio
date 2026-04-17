@@ -2,7 +2,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import type {
     AddCustomerCartItemBody,
     AppliedPromo,
-    CheckoutConfirmResponse,
+    PaymentVerifyResponse,
     CheckoutDataResponse,
     CheckoutPayWithPointsResponse,
     CheckoutPointsResponse,
@@ -122,14 +122,13 @@ export async function payWithPointsCheckout(body: {
     );
 }
 
-export async function confirmCheckout(body: {
-    orderId: string;
-    razorpay_payment_id: string;
-    razorpay_order_id: string;
-    razorpay_signature: string;
+export async function verifyPayment(params: {
+    transaction_id: string;
+    order_id: string;
 }) {
-    return apiPost<CheckoutConfirmResponse, typeof body>(
-        "/customer/checkout/confirm",
-        body,
-    );
+    const query = new URLSearchParams({
+        transaction_id: params.transaction_id,
+        order_id: params.order_id,
+    }).toString();
+    return apiGet<PaymentVerifyResponse>(`/customer/checkout/verify?${query}`);
 }
