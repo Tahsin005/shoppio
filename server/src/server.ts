@@ -16,6 +16,7 @@ import { adminPromoRouter } from "./routes/admin/promo.routes.js";
 import { adminSettingsRouter } from "./routes/admin/settings.routes.js";
 import { adminDashboardRouter } from "./routes/admin/dashboard.routes.js";
 import { customerHomeRouter } from "./routes/customer/home.routes.js";
+import { customerProductRouter } from "./routes/customer/product.routes.js";
 
 async function mainEntryFunction() {
     await connectDB();
@@ -49,6 +50,7 @@ async function mainEntryFunction() {
 
     // customer routes
     app.use("/customer", customerHomeRouter);
+    app.use("/customer", customerProductRouter);
 
     // admin routes
     app.use("/admin", adminProductRouter);

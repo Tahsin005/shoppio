@@ -12,6 +12,7 @@ import AdminProducts from "./pages/admin/products";
 import AdminPromos from "./pages/admin/promos";
 import AdminOrders from "./pages/admin/orders";
 import AdminSettings from "./pages/admin/settings";
+import Collections from "./pages/customer/collections";
 
 export const router = createBrowserRouter([
     {
@@ -32,7 +33,11 @@ export const router = createBrowserRouter([
                     {
                         path: "sign-up/*",
                         element: <SignUpPage />
-                    }
+                    },
+                    {
+                        path: "collections",
+                        element: <Collections />,
+                    },
                 ]
             },
             {
