@@ -26,6 +26,7 @@ export function uploadSingleBufferToCloudinary(
             {
                 folder,
                 resource_type: "image",
+                timeout: 60000,
             },
             (error, result) => {
                 if (error) {

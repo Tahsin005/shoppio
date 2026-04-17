@@ -13,6 +13,8 @@ import { authRouter } from "./routes/auth/auth.routes.js";
 import { adminProductRouter } from "./routes/admin/product.routes.js";
 import { adminOrderRouter } from "./routes/admin/order.routes.js";
 import { adminPromoRouter } from "./routes/admin/promo.routes.js";
+import { adminSettingsRouter } from "./routes/admin/settings.routes.js";
+import { adminDashboardRouter } from "./routes/admin/dashboard.routes.js";
 
 async function mainEntryFunction() {
     await connectDB();
@@ -48,6 +50,9 @@ async function mainEntryFunction() {
     app.use("/admin", adminProductRouter);
     app.use("/admin", adminOrderRouter);
     app.use("/admin", adminPromoRouter);
+    app.use("/admin", adminSettingsRouter);
+    app.use("/admin", adminDashboardRouter);
+
 
     app.use(notFound);
     app.use(errorHandler);
