@@ -15,6 +15,7 @@ import { adminOrderRouter } from "./routes/admin/order.routes.js";
 import { adminPromoRouter } from "./routes/admin/promo.routes.js";
 import { adminSettingsRouter } from "./routes/admin/settings.routes.js";
 import { adminDashboardRouter } from "./routes/admin/dashboard.routes.js";
+import { customerHomeRouter } from "./routes/customer/home.routes.js";
 
 async function mainEntryFunction() {
     await connectDB();
@@ -45,6 +46,9 @@ async function mainEntryFunction() {
 
     // auth routes
     app.use("/auth", authRouter);
+
+    // customer routes
+    app.use("/customer", customerHomeRouter);
 
     // admin routes
     app.use("/admin", adminProductRouter);
