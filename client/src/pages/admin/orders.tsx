@@ -23,7 +23,8 @@ import type {
     AdminPaymentStatus,
 } from "@/features/admin/orders/types";
 import { formatPrice } from "@/lib/utils";
-import { useEffect } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
 
 const pageWrapClass = "min-h-screen bg-background";
 const contentWrapClass = "mx-auto max-w-7xl px-4 py-8";
@@ -73,6 +74,11 @@ function getNextStatusValue(order: AdminOrder) {
 function AdminOrders() {
     const { loading, orders, updatingOrderId, fetchOrders, changeStatus } =
         useAdminOrdersStore((state) => state);
+    const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+    const toggleExpand = (id: string) => {
+        setExpandedOrder(expandedOrder === id ? null : id);
+    };
 
     useEffect(() => {
         void fetchOrders();
@@ -109,68 +115,118 @@ function AdminOrders() {
                                     <TableBody>
                                         {orders.map((order) => {
                                             const canUpdate = canUpdateStatus(order);
+                                            const isExpanded = expandedOrder === order._id;
                                             return (
-                                                <TableRow key={order._id}>
-                                                    <TableCell className="font-medium">
-                                                        {order._id}
-                                                    </TableCell>
-                                                    <TableCell>{order.customerName}</TableCell>
-                                                    <TableCell>{order.totalItems}</TableCell>
-                                                    <TableCell>
-                                                        {formatPrice(order.totalAmount)}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <AdminPaymentStatusBadge
-                                                            status={order.paymentStatus}
-                                                        />
-                                                    </TableCell>
+                                                <Fragment key={order._id}>
+                                                    <TableRow 
+                                                        className="cursor-pointer transition-colors hover:bg-muted/50"
+                                                        onClick={() => toggleExpand(order._id)}
+                                                    >
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex items-center gap-2">
+                                                                {isExpanded ? (
+                                                                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                                                ) : (
+                                                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                                )}
+                                                                {order._id}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>{order.customerName}</TableCell>
+                                                        <TableCell>{order.totalItems}</TableCell>
+                                                        <TableCell>
+                                                            {formatPrice(order.totalAmount)}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <AdminPaymentStatusBadge
+                                                                status={order.paymentStatus}
+                                                            />
+                                                        </TableCell>
 
-                                                    <TableCell>
-                                                        {formatDate(order.paidAt || order.createdAt)}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        {canUpdate ? (
-                                                            <Select
-                                                                value={getNextStatusValue(order)}
-                                                                onValueChange={(value) =>
-                                                                void changeStatus(
-                                                                    order._id,
-                                                                    value as AdminOrderStatus,
-                                                                )
-                                                                }
-                                                                disabled={updatingOrderId === order._id}
-                                                            >
-                                                                <SelectTrigger className={selectTriggerClass}>
-                                                                    <SelectValue placeholder="Update Status" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {orderStatusOptions.map((status) => (
-                                                                        <SelectItem
-                                                                            key={status}
-                                                                            value={status}
-                                                                            disabled={
-                                                                                status === "placed" ||
-                                                                                status === order.orderStatus ||
-                                                                                (order.orderStatus === "delivered" &&
-                                                                                    status === "shipped")
-                                                                            }
-                                                                        >
-                                                                            {status}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        ) : (
-                                                            <span className={subTextClass}>
-                                                                {order.paymentStatus !== "paid"
-                                                                    ? "Payment not paid"
-                                                                    : order.orderStatus === "returned"
-                                                                        ? "Returned"
-                                                                        : "Completed"}
-                                                            </span>
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
+                                                        <TableCell>
+                                                            {formatDate(order.paidAt || order.createdAt)}
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            {canUpdate ? (
+                                                                <Select
+                                                                    value={getNextStatusValue(order)}
+                                                                    onValueChange={(value) =>
+                                                                    void changeStatus(
+                                                                        order._id,
+                                                                        value as AdminOrderStatus,
+                                                                    )
+                                                                    }
+                                                                    disabled={updatingOrderId === order._id}
+                                                                >
+                                                                    <SelectTrigger 
+                                                                        className={selectTriggerClass}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    >
+                                                                        <SelectValue placeholder="Update Status" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent onClick={(e) => e.stopPropagation()}>
+                                                                        {orderStatusOptions.map((status) => (
+                                                                            <SelectItem
+                                                                                key={status}
+                                                                                value={status}
+                                                                                disabled={
+                                                                                    status === "placed" ||
+                                                                                    status === order.orderStatus ||
+                                                                                    (order.orderStatus === "delivered" &&
+                                                                                        status === "shipped")
+                                                                                }
+                                                                            >
+                                                                                {status}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            ) : (
+                                                                <span className={subTextClass}>
+                                                                    {order.paymentStatus !== "paid"
+                                                                        ? "Payment not paid"
+                                                                        : order.orderStatus === "returned"
+                                                                            ? "Returned"
+                                                                            : "Completed"}
+                                                                </span>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {isExpanded && (
+                                                        <TableRow className="bg-muted/30">
+                                                            <TableCell colSpan={7} className="p-4">
+                                                                <div className="ml-6 space-y-4">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Order Items</h4>
+                                                                        <p className="text-xs text-muted-foreground">Customer Email: <span className="font-medium text-foreground">{order.customerEmail}</span></p>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                                                        {order.items.map((item) => (
+                                                                            <div key={item.product._id} className="flex gap-4 rounded-lg border border-border/50 bg-background p-3 shadow-sm">
+                                                                                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-border">
+                                                                                    <img 
+                                                                                        src={item.product.image} 
+                                                                                        alt={item.product.title} 
+                                                                                        className="h-full w-full object-cover"
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="flex flex-col justify-center">
+                                                                                    <p className="line-clamp-1 text-sm font-semibold">{item.product.title}</p>
+                                                                                    <p className="text-xs text-muted-foreground">
+                                                                                        {item.quantity} × {formatPrice(item.product.price)}
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-xs font-bold text-primary">
+                                                                                        Subtotal: {formatPrice(item.product.price * item.quantity)}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </Fragment>
                                             );
                                         })}
                                     </TableBody>

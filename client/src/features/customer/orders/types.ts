@@ -12,6 +12,15 @@ export type CustomerOrder = {
     totalAmount: number;
     paymentStatus: CustomerPaymentStatus;
     orderStatus: CustomerOrderStatus;
+    items: {
+        product: {
+            _id: string;
+            title: string;
+            image: string;
+            price: number;
+        };
+        quantity: number;
+    }[];
     paidAt?: string | null;
     deliveredAt?: string | null;
     returnedAt?: string | null;

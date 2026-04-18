@@ -19,14 +19,24 @@ type CustomerOrderRow = {
     deliveredAt?: Date | null;
     returnedAt?: Date | null;
     createdAt: Date;
+    items: {
+        product: {
+            _id: Types.ObjectId;
+            title: string;
+            images: { url: string; isCover: boolean }[];
+            price: number;
+        };
+        quantity: number;
+    }[];
 };
 
 export const getCustomerOrder = asyncHandler(async (req: Request, res: Response) => {
     const dbUser = await getDbUserFromReq(req);
 
     const orders = await Order.find({ user: dbUser._id })
+        .populate("items.product", "title images price")
         .select(
-            "totalItems totalAmount paymentStatus orderStatus  paidAt deliveredAt returnedAt createdAt",
+            "items totalItems totalAmount paymentStatus orderStatus paidAt deliveredAt returnedAt createdAt",
         )
         .sort({ createdAt: -1 })
         .lean<CustomerOrderRow[]>();
@@ -44,6 +54,15 @@ export const getCustomerOrder = asyncHandler(async (req: Request, res: Response)
             deliveredAt: orderItem.deliveredAt,
             returnedAt: orderItem.returnedAt,
             createdAt: orderItem.createdAt,
+            items: orderItem.items.map((item) => ({
+                product: {
+                    _id: String(item.product._id),
+                    title: item.product.title,
+                    image: item.product.images.find((img) => img.isCover)?.url || (item.product.images[0]?.url || ""),
+                    price: item.product.price,
+                },
+                quantity: item.quantity,
+            })),
         })),
       }),
     );

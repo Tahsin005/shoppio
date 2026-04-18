@@ -21,7 +21,8 @@ import type {
   CustomerPaymentStatus,
 } from "@/features/customer/orders/types";
 import { formatPrice } from "@/lib/utils";
-import { ShoppingBasket } from "lucide-react";
+import { ChevronDown, ChevronUp, ShoppingBasket } from "lucide-react";
+import { Fragment, useState } from "react";
 
 const dialogClass = "max-h-[92vh] w-[95vw] overflow-y-auto border-border bg-background sm:max-w-3xl";
 const wrapClass = "space-y-4";
@@ -76,6 +77,8 @@ function MobileOrderCard({
     order: CustomerOrder; 
     onReturn: (id: string) => void 
 }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     return (
         <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex items-center justify-between border-b border-border/50 pb-2">
@@ -107,7 +110,44 @@ function MobileOrderCard({
                 </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="space-y-2 border-t border-border/50 pt-3">
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-full justify-between px-2 text-xs font-medium hover:bg-secondary/40"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                >
+                    {isExpanded ? "Hide Items" : "View Items"}
+                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </Button>
+                
+                {isExpanded && (
+                    <div className="space-y-3 pt-2">
+                        {order.items.map((item) => (
+                            <div key={item.product._id} className="flex items-center gap-3">
+                                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                                    <img 
+                                        src={item.product.image} 
+                                        alt={item.product.title} 
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="truncate text-xs font-semibold">{item.product.title}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Qty: {item.quantity} × {formatPrice(item.product.price)}
+                                    </p>
+                                </div>
+                                <div className="text-xs font-medium">
+                                    {formatPrice(item.product.price * item.quantity)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-border/50 pt-2">
                 <span className="text-xs text-muted-foreground">
                     {order.paidAt ? `Paid on ${formatDate(order.paidAt)}` : "Payment Pending"}
                 </span>
@@ -132,6 +172,11 @@ function MobileOrderCard({
 
 function CustomerOrdersDialog() {
     const { isOpen, closeOrders, loading, items, returnOrder, loadOrders } = useCustomerOrdersStore((state) => state);
+    const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+    const toggleExpand = (id: string) => {
+        setExpandedOrder(expandedOrder === id ? null : id);
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeOrders()}>
@@ -176,37 +221,85 @@ function CustomerOrdersDialog() {
 
                                 <TableBody>
                                     {items.map((order) => (
-                                        <TableRow key={order._id}>
-                                            <TableCell className="font-medium">{order._id}</TableCell>
-                                            <TableCell>{order.totalItems}</TableCell>
-                                            <TableCell>{formatPrice(order.totalAmount)}</TableCell>
-                                            <TableCell>
-                                                <CustomerPaymentStatusBadge
-                                                    status={order.paymentStatus}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <CustomerOrderStatusBadge status={order.orderStatus} />
-                                            </TableCell>
-                                            <TableCell>
-                                                {formatDate(order.paidAt || order.createdAt)}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                {canReturnOrder(order) ? (
-                                                    <Button
-                                                        size="sm"
-                                                        className="rounded-none"
-                                                        onClick={() => returnOrder(order._id)}
-                                                    >
-                                                        Return
-                                                    </Button>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {order.orderStatus === "returned" ? "Returned" : ""}
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
+                                        <Fragment key={order._id}>
+                                            <TableRow 
+                                                className="cursor-pointer transition-colors hover:bg-muted/50"
+                                                onClick={() => toggleExpand(order._id)}
+                                            >
+                                                <TableCell className="font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        {expandedOrder === order._id ? (
+                                                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                        )}
+                                                        {order._id}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>{order.totalItems}</TableCell>
+                                                <TableCell>{formatPrice(order.totalAmount)}</TableCell>
+                                                <TableCell>
+                                                    <CustomerPaymentStatusBadge
+                                                        status={order.paymentStatus}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <CustomerOrderStatusBadge status={order.orderStatus} />
+                                                </TableCell>
+                                                <TableCell>
+                                                    {formatDate(order.paidAt || order.createdAt)}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {canReturnOrder(order) ? (
+                                                        <Button
+                                                            size="sm"
+                                                            className="rounded-none"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                void returnOrder(order._id);
+                                                            }}
+                                                        >
+                                                            Return
+                                                        </Button>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {order.orderStatus === "returned" ? "Returned" : ""}
+                                                        </span>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                            {expandedOrder === order._id && (
+                                                <TableRow className="bg-muted/30">
+                                                    <TableCell colSpan={7} className="p-4">
+                                                        <div className="ml-6 space-y-4">
+                                                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Order Items</h4>
+                                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                                                {order.items.map((item) => (
+                                                                    <div key={item.product._id} className="flex gap-4 rounded-lg border border-border/50 bg-background p-3 shadow-sm">
+                                                                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-border">
+                                                                            <img 
+                                                                                src={item.product.image} 
+                                                                                alt={item.product.title} 
+                                                                                className="h-full w-full object-cover"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex flex-col justify-center">
+                                                                            <p className="line-clamp-1 text-sm font-semibold">{item.product.title}</p>
+                                                                            <p className="text-xs text-muted-foreground">
+                                                                                {item.quantity} × {formatPrice(item.product.price)}
+                                                                            </p>
+                                                                            <p className="mt-1 text-xs font-bold text-primary">
+                                                                                Subtotal: {formatPrice(item.product.price * item.quantity)}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </Fragment>
                                     ))}
                                 </TableBody>
                             </Table>
