@@ -18,7 +18,7 @@ import { useState } from "react";
 const dialogContentClass = "sm:max-w-xl";
 const contentWrap = "space-y-4";
 const formRow = "flex gap-3";
-const categoriesList = "space-y-2";
+const categoriesList = "max-h-[400px] overflow-y-auto space-y-2 pr-1";
 const categoryRow = "flex items-center justify-between rounded-xl border border-border bg-card px-3 py-3";
 const categoryInfo = "flex items-center gap-2";
 const categoryIcon = "h-4 w-4 text-muted-foreground";

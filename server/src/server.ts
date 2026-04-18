@@ -24,65 +24,88 @@ import { customerCheckoutRouter } from "./routes/customer/checkout.routes.js";
 import { customerCheckoutWithPointsRouter } from "./routes/customer/checkout-with-points.routes.js";
 import { customerOrderRouter } from "./routes/customer/orders.routes.js";
 
-async function mainEntryFunction() {
-    await connectDB();
+const app = express();
 
-    const app = express();
+const corsOrigins = (environment.corsOrigins || "http://localhost:3000")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
 
-    const corsOrigins = (environment.corsOrigins || "http://localhost:3000")
-        .split(",")
-        .map((origin) => origin.trim())
-        .filter(Boolean);
+app.use(
+    cors({
+        origin: corsOrigins,
+        credentials: true,
+    }),
+);
 
-    app.use(
-        cors({
-            origin: corsOrigins,
-            credentials: true,
-        }),
-    );
+app.use(express.json());
+app.use(morgan("dev"));
+app.use(clerkMiddleware());
 
-    app.use(express.json());
-    app.use(morgan("dev"));
-    app.use(clerkMiddleware());
+import mongoose from "mongoose";
+import { lastDbError } from "./db.js";
 
-    app.get("/health", (_req, res) => {
-        res.status(200).json(ok({ 
-            message: "Server is healthy and running" 
-        }));
-    });
+app.get("/health", (_req, res) => {
+    const dbState = mongoose.connection.readyState;
+    const dbStatus = {
+        0: "disconnected",
+        1: "connected",
+        2: "connecting",
+        3: "disconnecting",
+        99: "uninitialized",
+    }[dbState] || "unknown";
 
-    // auth routes
-    app.use("/auth", authRouter);
+    const mongoUri = environment.mongoUri || "";
+    const obfuscatedUri = mongoUri.length > 20 
+        ? `${mongoUri.substring(0, 15)}...${mongoUri.substring(mongoUri.length - 10)}`
+        : "not_set";
 
-    // customer routes
-    app.use("/customer", customerHomeRouter);
-    app.use("/customer", customerProductRouter);
-    app.use("/customer", customerCartWishlistRouter);
-    app.use("/customer", customerAddressRouter);
-    app.use("/customer", customerPromoRouter);
-    app.use("/customer", customerCheckoutRouter);
-    app.use("/customer", customerCheckoutWithPointsRouter);
-    app.use("/customer", customerOrderRouter);
+    res.status(200).json(ok({ 
+        message: "Server is healthy and running",
+        database: {
+            state: dbState,
+            status: dbStatus,
+            error: lastDbError,
+            uri: obfuscatedUri
+        }
+    }));
+});
 
-    // admin routes
-    app.use("/admin", adminProductRouter);
-    app.use("/admin", adminOrderRouter);
-    app.use("/admin", adminPromoRouter);
-    app.use("/admin", adminSettingsRouter);
-    app.use("/admin", adminDashboardRouter);
+// auth routes
+app.use("/auth", authRouter);
+
+// customer routes
+app.use("/customer", customerHomeRouter);
+app.use("/customer", customerProductRouter);
+app.use("/customer", customerCartWishlistRouter);
+app.use("/customer", customerAddressRouter);
+app.use("/customer", customerPromoRouter);
+app.use("/customer", customerCheckoutRouter);
+app.use("/customer", customerCheckoutWithPointsRouter);
+app.use("/customer", customerOrderRouter);
+
+// admin routes
+app.use("/admin", adminProductRouter);
+app.use("/admin", adminOrderRouter);
+app.use("/admin", adminPromoRouter);
+app.use("/admin", adminSettingsRouter);
+app.use("/admin", adminDashboardRouter);
 
 
-    app.use(notFound);
-    app.use(errorHandler);
+app.use(notFound);
+app.use(errorHandler);
 
+// Start DB connection
+connectDB().catch((err) => {
+    console.error("failed to connect to DB", err);
+});
+
+if (!process.env.VERCEL) {
     const port = Number(environment.port || 5000);
-
     app.listen(port, () => {
         console.log(`Server is now listening to port ${port}`);
     });
-};
+}
 
-mainEntryFunction().catch((err) => {
-    console.error("failed to start", err);
-    process.exit(1);
-});
+export { app };
+export default app;
