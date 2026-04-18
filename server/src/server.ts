@@ -45,6 +45,15 @@ app.use(clerkMiddleware());
 import mongoose from "mongoose";
 import { lastDbError } from "./db.js";
 
+app.use(async (_req, _res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
+
 app.get("/health", (_req, res) => {
     const dbState = mongoose.connection.readyState;
     const dbStatus = {
@@ -94,11 +103,6 @@ app.use("/admin", adminDashboardRouter);
 
 app.use(notFound);
 app.use(errorHandler);
-
-// Start DB connection
-connectDB().catch((err) => {
-    console.error("failed to connect to DB", err);
-});
 
 if (!process.env.VERCEL) {
     const port = Number(environment.port || 5000);
