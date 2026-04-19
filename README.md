@@ -8,12 +8,14 @@ Shoppio is a premium, full-stack e-commerce application built with speed, scalab
 - **Modern Shopping Experience**: Responsive UI with high-performance product browsing.
 - **Cart & Wishlist Management**: Seamlessly manage products for purchase or later interest.
 - **Secure Checkout**: Integrated with Moneybag gateway for safe transactions.
-- **Points System**: Integrated points-based checkout for loyalty rewards.
+- **Loyalty Rewards**: Earn points (**30%**) on every real-money purchase automatically.
+- **Transaction History**: Detailed log of all payments, point earnings, and refunds.
+- **Enhanced Order Tracking**: View exact product details, quantities, and status updates.
 - **Authentication**: Secure user login and profile management powered by Clerk.
 
 ### Admin Features
 - **Product Management**: Create, update, and manage inventory with ease.
-- **Order Tracking**: Comprehensive dashboard to track and fulfill customer orders.
+- **Rich Order Insights**: Detailed view of customer orders with product-level information.
 - **Settings & Banners**: Dynamic homepage management via administrative controls.
 - **Analytics**: Insightful dashboard for monitoring platform performance.
 
