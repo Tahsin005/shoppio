@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, LogIn, LogOut, Menu, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, type LucideIcon } from "lucide-react";
+import { Heart, LogIn, LogOut, Menu, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, History, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCustomerWishlistStore } from "@/features/customer/wishlist/store";
 import { useCustomerProfileStore } from "@/features/customer/profile/store";
@@ -125,6 +125,11 @@ export function CustomerMobileNavbar({
                 label: "My Orders", 
                 icon: ShoppingBasket, 
                 onClick: () => handleAction(() => openOrders()) 
+            },
+            { 
+                label: "Transactions", 
+                icon: History, 
+                onClick: () => handleAction(() => window.location.href = "/transactions"),
             },
             { 
                 label: "Wishlist", 

@@ -23,6 +23,7 @@ import { customerPromoRouter } from "./routes/customer/promo.routes.js";
 import { customerCheckoutRouter } from "./routes/customer/checkout.routes.js";
 import { customerCheckoutWithPointsRouter } from "./routes/customer/checkout-with-points.routes.js";
 import { customerOrderRouter } from "./routes/customer/orders.routes.js";
+import customerTransactionRouter from "./routes/customer/transactions.routes.js";
 
 const app = express();
 
@@ -92,6 +93,7 @@ app.use("/customer", customerPromoRouter);
 app.use("/customer", customerCheckoutRouter);
 app.use("/customer", customerCheckoutWithPointsRouter);
 app.use("/customer", customerOrderRouter);
+app.use("/customer/transactions", customerTransactionRouter);
 
 // admin routes
 app.use("/admin", adminProductRouter);

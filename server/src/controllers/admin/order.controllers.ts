@@ -7,6 +7,7 @@ import { requireFound, requireText } from "../../utils/helpers.js";
 import { AppError } from "../../utils/AppError.js";
 import { type Request, type Response } from "express";
 import { User } from "../../models/User.js";
+import { Transaction } from "../../models/Transaction.js";
 
 const ALLOWED_ORDER_STATUSES = [
     "placed",
@@ -112,6 +113,15 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
             { _id: foundOrder.user },
             { $inc: { points: foundOrder.totalAmount } },
         );
+
+        await Transaction.create({
+            user: foundOrder.user,
+            type: "credit",
+            paymentMethod: "points",
+            amount: foundOrder.totalAmount,
+            description: `Order Refund for #${String(foundOrder._id).slice(-8).toUpperCase()} (Admin)`,
+            order: foundOrder._id,
+        });
 
         // set returnedAt
         foundOrder.returnedAt = new Date();

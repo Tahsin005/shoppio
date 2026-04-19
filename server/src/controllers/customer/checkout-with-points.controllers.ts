@@ -10,6 +10,7 @@ import { AppError } from "../../utils/AppError.js";
 import { Cart } from "../../models/Cart.js";
 import { Promo } from "../../models/Promo.js";
 import { Order } from "../../models/Order.js";
+import { Transaction } from "../../models/Transaction.js";
 
 type UserAddressRow = {
     _id: Types.ObjectId;
@@ -248,6 +249,15 @@ export const createCheckoutWithPoints = asyncHandler(async (req: Request, res: R
             paymentSessionId: pointsPaymentId,
             paymentId: pointsPaymentId,
             paidAt: new Date(),
+        });
+
+        await Transaction.create({
+            user: dbUser._id,
+            type: "debit",
+            paymentMethod: "points",
+            amount: totalAmount,
+            description: `Order Payment for #${String(order._id).slice(-8).toUpperCase()}`,
+            order: order._id,
         });
 
         const updatedUser = await User.findById(dbUser._id)

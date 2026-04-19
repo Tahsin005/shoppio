@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import { Order, OrderStatus, PaymentStatus } from "../../models/Order.js";
+import { Transaction } from "../../models/Transaction.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { type Request, type Response } from "express";
 import { getDbUserFromReq } from "../../middleware/auth.js";
@@ -104,6 +105,15 @@ export const returnOrder = asyncHandler(async (req: Request, res: Response) => {
             $inc: { points: foundOrder.totalAmount },
         },
     );
+
+    await Transaction.create({
+        user: dbUser._id,
+        type: "credit",
+        paymentMethod: "points",
+        amount: foundOrder.totalAmount,
+        description: `Order Refund for #${String(foundOrder._id).slice(-8).toUpperCase()}`,
+        order: foundOrder._id,
+    });
 
     foundOrder.orderStatus = "returned";
     foundOrder.returnedAt = new Date();

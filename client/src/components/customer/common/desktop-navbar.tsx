@@ -3,7 +3,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuthStore } from "@/features/auth/store";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, LogIn, LogOut, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, type LucideIcon } from "lucide-react";
+import { Heart, LogIn, LogOut, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, History, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CustomerMobileNavbar } from "./mobile-navbar";
 import CustomerWishlistDialog from "../wishlist/customer-wishlist-dialog";
@@ -160,6 +160,12 @@ export function CustomerNavbar() {
                                         >
                                             <User className="h-4 w-4" />
                                             <span>My Account</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link to="/transactions" className={dropdownItemLink}>
+                                                <History className="h-4 w-4" />
+                                                <span>Transactions</span>
+                                            </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => void openOrders()}

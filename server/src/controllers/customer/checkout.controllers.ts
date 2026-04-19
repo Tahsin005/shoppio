@@ -9,6 +9,7 @@ import { Cart } from "../../models/Cart.js";
 import { AppError } from "../../utils/AppError.js";
 import { Promo } from "../../models/Promo.js";
 import { Order } from "../../models/Order.js";
+import { Transaction } from "../../models/Transaction.js";
 import { ok } from "../../utils/envelope.js";
 import { moneybag, PAYMENT_STATUS, CURRENCY_CODES } from "../../utils/moneybag.js";
 import environment from "../../config/environment.js";
@@ -329,6 +330,35 @@ export const verifyCheckout = asyncHandler(async (req: Request, res: Response) =
         foundOrder.paymentId = transactionId;
         foundOrder.paidAt = new Date();
         await foundOrder.save();
+
+        // Points Earning: 30% of totalAmount
+        const pointsEarned = Math.round(foundOrder.totalAmount * 0.3);
+
+        // Update User Points
+        await User.updateOne(
+            { _id: dbUser._id },
+            { $inc: { points: pointsEarned } },
+        );
+
+        // Log Transaction: Moneybag Payment (Debit)
+        await Transaction.create({
+            user: dbUser._id,
+            type: "debit",
+            paymentMethod: "moneybag",
+            amount: foundOrder.totalAmount,
+            description: `Order Payment for #${String(foundOrder._id).slice(-8).toUpperCase()}`,
+            order: foundOrder._id,
+        });
+
+        // Log Transaction: Points Earned (Credit)
+        await Transaction.create({
+            user: dbUser._id,
+            type: "credit",
+            paymentMethod: "points",
+            amount: pointsEarned,
+            description: `30% Shopping Rewards for #${String(foundOrder._id).slice(-8).toUpperCase()}`,
+            order: foundOrder._id,
+        });
 
         res.json(ok({ _id: String(foundOrder._id), status: PAYMENT_STATUS.SUCCESS, verified: true }));
     } catch (error) {
