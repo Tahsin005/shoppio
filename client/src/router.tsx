@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { CustomerLayout } from "./components/layout/customer-layout";
 import { PublicOnlyLayout } from "./components/auth/public-only-layout";
 import { SignInPage } from "./pages/auth/sign-in";
@@ -18,7 +18,11 @@ import CustomerOrderSuccessPage from "./pages/customer/order-success";
 import PaymentSuccessPage from "./pages/customer/payment-success";
 import PaymentFailPage from "./pages/customer/payment-fail";
 import PaymentCancelPage from "./pages/customer/payment-cancel";
-import TransactionsPage from "./pages/customer/transactions";
+import AccountLayout from "./pages/customer/account-layout";
+import AccountProfilePage from "./pages/customer/account/profile";
+import AccountOrdersPage from "./pages/customer/account/orders";
+import AccountTransactionsPage from "./pages/customer/account/transactions";
+import AccountWishlistPage from "./pages/customer/account/wishlist";
 
 export const router = createBrowserRouter([
     {
@@ -57,9 +61,36 @@ export const router = createBrowserRouter([
                         path: "order-success",
                         element: <CustomerOrderSuccessPage />,
                     },
+                    // Legacy redirect: /transactions → /account/transactions
                     {
                         path: "transactions",
-                        element: <TransactionsPage />,
+                        element: <Navigate to="/account/transactions" replace />,
+                    },
+                    {
+                        path: "account",
+                        element: <AccountLayout />,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="profile" replace />,
+                            },
+                            {
+                                path: "profile",
+                                element: <AccountProfilePage />,
+                            },
+                            {
+                                path: "orders",
+                                element: <AccountOrdersPage />,
+                            },
+                            {
+                                path: "transactions",
+                                element: <AccountTransactionsPage />,
+                            },
+                            {
+                                path: "wishlist",
+                                element: <AccountWishlistPage />,
+                            },
+                        ],
                     },
                 ]
             },

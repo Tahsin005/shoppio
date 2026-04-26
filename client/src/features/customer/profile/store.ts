@@ -19,13 +19,10 @@ const emptyForm: CustomerAddressFormValues = {
 type FormMode = "none" | "add" | "edit";
 
 type CustomerProfileStore = {
-    isOpen: boolean;
     items: CustomerAddress[];
     mode: FormMode;
     editingAddressId: string;
     form: CustomerAddressFormValues;
-    openProfile: () => Promise<void>;
-    closeProfile: () => void;
     loadAddresses: () => Promise<void>;
     startAdd: () => void;
     startEdit: (address: CustomerAddress) => void;
@@ -40,25 +37,11 @@ type CustomerProfileStore = {
 };
 
 export const useCustomerProfileStore = create<CustomerProfileStore>(
-    (set, get) => ({
-        isOpen: false,
+    (set) => ({
         items: [],
         mode: "none",
         editingAddressId: "",
         form: emptyForm,
-        openProfile: async () => {
-            set({ isOpen: true });
-            // fetch the loadAddress method
-            await get().loadAddresses();
-        },
-        closeProfile: () => {
-            set({
-                isOpen: false,
-                mode: "none",
-                editingAddressId: "",
-                form: emptyForm,
-            });
-        },
         loadAddresses: async () => {
             try {
                 const response = await getCustomerAddresses();
@@ -151,7 +134,6 @@ export const useCustomerProfileStore = create<CustomerProfileStore>(
         },
         clear: () => {
             set({
-                isOpen: false,
                 items: [],
                 mode: "none",
                 form: emptyForm,

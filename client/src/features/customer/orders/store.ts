@@ -4,19 +4,15 @@ import { getCustomerOrders, returnCustomerOrder } from "./api";
 import { toast } from "sonner";
 
 type CustomerOrdersStore = {
-    isOpen: boolean;
     loading: boolean;
     items: CustomerOrder[];
-    openOrders: () => Promise<void>;
-    closeOrders: () => void;
     loadOrders: () => Promise<void>;
     returnOrder: (orderId: string) => Promise<void>;
     clear: () => void;
 };
 
 export const useCustomerOrdersStore = create<CustomerOrdersStore>(
-    (set, get) => ({
-        isOpen: false,
+    (set) => ({
         loading: false,
         items: [],
         loadOrders: async () => {
@@ -31,14 +27,8 @@ export const useCustomerOrdersStore = create<CustomerOrdersStore>(
             }
         },
 
-        openOrders: async () => {
-            set({ isOpen: true });
-            await get().loadOrders();
-        },
-        closeOrders: () => set({ isOpen: false }),
         clear: () => {
             set({
-                isOpen: false,
                 loading: false,
                 items: [],
             });

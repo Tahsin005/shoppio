@@ -5,8 +5,6 @@ import { toast } from "sonner";
 
 type CustomerWishlistStore = {
     items: CustomerWishlistItem[];
-    isOpen: boolean;
-    setOpen: (val: boolean) => void;
     setItems: (items: CustomerWishlistItem[]) => void;
     loadWishlist: () => Promise<void>;
     removeItem: (productId: string) => Promise<void>;
@@ -16,10 +14,8 @@ type CustomerWishlistStore = {
 export const useCustomerWishlistStore = create<CustomerWishlistStore>(
     (set) => ({
         items: [],
-        isOpen: false,
-        setOpen: (value) => set({ isOpen: value }),
         setItems: (items) => set({ items }),
-        clear: () => set({ items: [], isOpen: false }),
+        clear: () => set({ items: [] }),
         loadWishlist: async () => {
             try {
                 const response = await getCustomerWishlist();

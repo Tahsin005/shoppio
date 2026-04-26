@@ -5,9 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, LogIn, LogOut, Menu, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, History, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCustomerWishlistStore } from "@/features/customer/wishlist/store";
-import { useCustomerProfileStore } from "@/features/customer/profile/store";
 import { useCustomerCartAndCheckoutStore } from "@/features/customer/cart-and-checkout/store";
-import { useCustomerOrdersStore } from "@/features/customer/orders/store";
 import { useAuth } from "@clerk/react";
 import { useState } from "react";
 
@@ -101,10 +99,8 @@ export function CustomerMobileNavbar({
     const [isOpen, setIsOpen] = useState(false);
     const { signOut } = useAuth();
     
-    const { items: wishlistItems, setOpen: setWishlistOpen } = useCustomerWishlistStore();
-    const { openProfile } = useCustomerProfileStore();
+    const { items: wishlistItems } = useCustomerWishlistStore();
     const { setOpen: setCartOpen, cart } = useCustomerCartAndCheckoutStore();
-    const { openOrders } = useCustomerOrdersStore();
 
     const handleAction = (action: () => void) => {
         setIsOpen(false);
@@ -119,23 +115,23 @@ export function CustomerMobileNavbar({
             { 
                 label: "Account", 
                 icon: User, 
-                onClick: () => handleAction(() => openProfile()) 
+                href: "/account/profile",
             },
             { 
                 label: "My Orders", 
                 icon: ShoppingBasket, 
-                onClick: () => handleAction(() => openOrders()) 
+                href: "/account/orders",
             },
             { 
                 label: "Transactions", 
                 icon: History, 
-                onClick: () => handleAction(() => window.location.href = "/transactions"),
+                href: "/account/transactions",
             },
             { 
                 label: "Wishlist", 
                 icon: Heart, 
                 badge: wishlistCount,
-                onClick: () => handleAction(() => setWishlistOpen(true)) 
+                href: "/account/wishlist",
             },
             { 
                 label: "Sign Out", 

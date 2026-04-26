@@ -3,17 +3,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuthStore } from "@/features/auth/store";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, LogIn, LogOut, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, History, type LucideIcon } from "lucide-react";
+import { Heart, History, LogIn, LogOut, ShoppingBag, ShoppingBasket, ShoppingCart, Store, User, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CustomerMobileNavbar } from "./mobile-navbar";
-import CustomerWishlistDialog from "../wishlist/customer-wishlist-dialog";
 import { useCustomerWishlistStore } from "@/features/customer/wishlist/store";
-import { useCustomerProfileStore } from "@/features/customer/profile/store";
 import { useCustomerCartAndCheckoutStore } from "@/features/customer/cart-and-checkout/store";
-import { useCustomerOrdersStore } from "@/features/customer/orders/store";
 import { useEffect } from "react";
-import CustomerProfileDialog from "../profile/customer-profile-dialog";
-import CustomerOrdersDialog from "../orders/customer-orders-dialog";
 import CustomerCartAndCheckoutDrawer from "../cart-and-checkout/customer-cart-and-checkout-drawer";
 
 const shell = "mx-auto flex h-[72px] max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8";
@@ -31,7 +26,6 @@ const dropdownItemLink = "flex cursor-pointer items-center gap-3 rounded-xl px-3
 const cartBadge = "absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-400 px-1.5 text-[11px] font-semibold leading-5 text-black";
 const wishlistBadge = "absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-400 px-1.5 text-[11px] font-semibold leading-5 text-black";
 
-
 type NavItem = {
     label: string;
     href: string;
@@ -44,15 +38,7 @@ const collectionsPage: NavItem = {
     icon: ShoppingBag,
 };
 
-function NavTextLink({
-    href,
-    label,
-    icon: Icon,
-}: {
-    href: string;
-    label: string;
-    icon: LucideIcon;
-}) {
+function NavTextLink({ href, label, icon: Icon }: { href: string; label: string; icon: LucideIcon }) {
     return (
         <Link to={href} className={textLink}>
             <Icon className="h-[18px] w-[18px]" />
@@ -69,18 +55,9 @@ export function CustomerNavbar() {
         items: wishlistItems,
         loadWishlist,
         clear: clearWishlist,
-        setOpen: setWishlistOpen,
     } = useCustomerWishlistStore((state) => state);
 
-    const { openProfile, clear: clearProfile } = useCustomerProfileStore(
-        (state) => state,
-    );
-
-    const { setOpen, cart, loadCart } = useCustomerCartAndCheckoutStore(
-        (state) => state,
-    );
-
-    const { openOrders } = useCustomerOrdersStore((state) => state);
+    const { setOpen, cart, loadCart } = useCustomerCartAndCheckoutStore((state) => state);
 
     useEffect(() => {
         if (!isLoaded || !isBootstrapped) return;
@@ -89,20 +66,11 @@ export function CustomerNavbar() {
 
         if (!isSignedIn) {
             clearWishlist();
-            clearProfile();
             return;
         }
 
         void loadWishlist();
-    }, [
-        clearWishlist,
-        isBootstrapped,
-        clearProfile,
-        isSignedIn,
-        isLoaded,
-        loadWishlist,
-        loadCart,
-    ]);
+    }, [isBootstrapped, isSignedIn, isLoaded, loadWishlist, loadCart, clearWishlist]);
 
     const showSignInUi = isLoaded && isBootstrapped && isSignedIn;
     const wishlistCount = wishlistItems.length;
@@ -117,11 +85,7 @@ export function CustomerNavbar() {
                 </Link>
 
                 <div className={desktopCollectionsWrap}>
-                    <NavTextLink
-                        href={collectionsPage.href}
-                        label={collectionsPage.label}
-                        icon={collectionsPage.icon}
-                    />
+                    <NavTextLink href={collectionsPage.href} label={collectionsPage.label} icon={collectionsPage.icon} />
                 </div>
 
                 <nav className={desktopNav}>
@@ -133,46 +97,40 @@ export function CustomerNavbar() {
                     ) : (
                         <>
                             {showSignInUi ? (
-                                <button
-                                    type="button"
-                                    className={iconLink}
-                                    onClick={() => setWishlistOpen(true)}
-                                >
+                                <Link to="/account/wishlist" className={iconLink}>
                                     <Heart className="w-[20px] h-[20px]" />
-                                    <span className={wishlistBadge}>{wishlistCount}</span>
-                                </button>
+                                    {wishlistCount > 0 && (
+                                        <span className={wishlistBadge}>{wishlistCount}</span>
+                                    )}
+                                </Link>
                             ) : null}
+
                             {isSignedIn ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant={"ghost"} className={dropdownButton}>
-                                        <User className="h-4.5 w-4.5" />
+                                            <User className="h-4.5 w-4.5" />
                                             Account
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        align="start"
-                                        className={accountDropdownContent}
-                                    >
-                                        <DropdownMenuItem
-                                            onClick={() => void openProfile()}
-                                            className={dropdownItemLink}
-                                        >
-                                            <User className="h-4 w-4" />
-                                            <span>My Account</span>
+                                    <DropdownMenuContent align="start" className={accountDropdownContent}>
+                                        <DropdownMenuItem asChild>
+                                            <Link to="/account/profile" className={dropdownItemLink}>
+                                                <User className="h-4 w-4" />
+                                                <span>My Account</span>
+                                            </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
-                                            <Link to="/transactions" className={dropdownItemLink}>
+                                            <Link to="/account/orders" className={dropdownItemLink}>
+                                                <ShoppingBasket className="h-4 w-4" />
+                                                <span>My Orders</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link to="/account/transactions" className={dropdownItemLink}>
                                                 <History className="h-4 w-4" />
                                                 <span>Transactions</span>
                                             </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => void openOrders()}
-                                            className={dropdownItemLink}
-                                        >
-                                            <ShoppingBasket className="h-4 w-4" />
-                                            <span>My Orders</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => signOut()}
@@ -195,14 +153,7 @@ export function CustomerNavbar() {
                     </div>
                 </nav>
 
-                <CustomerMobileNavbar
-                    isSignedIn={!!isSignedIn}
-                    loading={isLoading}
-                />
-
-                {showSignInUi ? <CustomerWishlistDialog /> : null}
-                {showSignInUi ? <CustomerProfileDialog /> : null}
-                {showSignInUi ? <CustomerOrdersDialog /> : null}
+                <CustomerMobileNavbar isSignedIn={!!isSignedIn} loading={isLoading} />
                 <CustomerCartAndCheckoutDrawer />
             </div>
         </header>
