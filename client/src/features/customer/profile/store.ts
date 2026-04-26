@@ -37,7 +37,7 @@ type CustomerProfileStore = {
 };
 
 export const useCustomerProfileStore = create<CustomerProfileStore>(
-    (set) => ({
+    (set, get) => ({
         items: [],
         mode: "none",
         editingAddressId: "",
